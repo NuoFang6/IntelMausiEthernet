@@ -127,6 +127,11 @@ void IntelMausi::initPCIPowerManagment(IOPCIDevice *provider, const struct e1000
         if (ei->flags2 & FLAG2_DISABLE_ASPM_L1)
             aspmDisable |= kIOPCIELinkCtlL1;
 
+        /* The upstream per-chip ASPM quirk table was not ported, so ASPM stays enabled
+           on I219 parts (ADP/ADL included) where L1 entry breaks the receive path while
+           transmit keeps working. Force ASPM off, as the Linux driver does for these parts. */
+        aspmDisable |= kIOPCIELinkCtlL0s | kIOPCIELinkCtlL1;
+
         if (aspmDisable)
             provider->extendedConfigWrite16(pcieCapOffset + kIOPCIELinkControl, (pcieLinkCtl & ~aspmDisable));
 
