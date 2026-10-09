@@ -127,11 +127,6 @@ void IntelMausi::initPCIPowerManagment(IOPCIDevice *provider, const struct e1000
         if (ei->flags2 & FLAG2_DISABLE_ASPM_L1)
             aspmDisable |= kIOPCIELinkCtlL1;
 
-        /* The upstream per-chip ASPM quirk table was not ported, so ASPM stays enabled
-           on I219 parts (ADP/ADL included) where L1 entry breaks the receive path while
-           transmit keeps working. Force ASPM off, as the Linux driver does for these parts. */
-        aspmDisable |= kIOPCIELinkCtlL0s | kIOPCIELinkCtlL1;
-
         if (aspmDisable)
             provider->extendedConfigWrite16(pcieCapOffset + kIOPCIELinkControl, (pcieLinkCtl & ~aspmDisable));
 
@@ -603,9 +598,12 @@ void IntelMausi::intelConfigureRx(struct e1000_adapter *adapter)
 	 */
     intelInitRxRing();
     
-	/* Enable Receive Checksum Offload for TCP and UDP */
+	/* Hardware RX checksum offload (TCP/UDP, pseudo-header included) is deliberately
+	   left disabled: it is suspected to mis-flag valid TCP segments on this part, which
+	   makes the stack drop them and collapses TCP throughput, while ICMP (no pseudo-header)
+	   stays healthy. The stack then verifies checksums in software. */
 	rxcsum = intelReadMem32(E1000_RXCSUM);
-    rxcsum |= E1000_RXCSUM_TUOFL;
+    rxcsum &= ~E1000_RXCSUM_TUOFL;
 	intelWriteMem32(E1000_RXCSUM, rxcsum);
     
 	/* With jumbo frames, excessive C-state transition latencies result
