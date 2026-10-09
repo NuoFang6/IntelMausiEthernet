@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-26
+    steps:
+      - name: Checkout IntelMausiEthernet
+        uses: actions/checkout@v4
+
+      - name: Checkout MacKernelSDK
+        uses: actions/checkout@v4
+        with:
+          repository: acidanthera/MacKernelSDK
+          path: MacKernelSDK
+
+      - name: Build Release
+        run: xcodebuild -configuration Release CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: IntelMausiEthernet
+          path: |
+            build/*/*.zip
+            build/*/*.kext
+            build/*.zip
+            *.zip
