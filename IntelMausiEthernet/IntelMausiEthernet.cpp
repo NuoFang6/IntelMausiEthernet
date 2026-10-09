@@ -990,24 +990,14 @@ IOReturn IntelMausi::setMulticastList(IOEthernetAddress *addrs, UInt32 count)
 
 IOReturn IntelMausi::getChecksumSupport(UInt32 *checksumMask, UInt32 checksumFamily, bool isOutput)
 {
-    IOReturn result = kIOReturnUnsupported;
-    
-    DebugLog("getChecksumSupport() ===>\n");
-    
-    if ((checksumFamily == kChecksumFamilyTCPIP) && checksumMask) {
-        if (isOutput) {
-            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
-            
-            if (enableCSO6)
-                *checksumMask |= (kChecksumTCPIPv6 | kChecksumUDPIPv6);
-        } else {
-            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP | kChecksumTCPIPv6 | kChecksumUDPIPv6);
-        }
-        result = kIOReturnSuccess;
-    }
-    DebugLog("getChecksumSupport() <===\n");
-    
-    return result;
+    /* Diagnostic: advertise no hardware checksum offload at all (see the matching note in
+       IntelMausiHardware.cpp) so that macOS computes and verifies TCP/UDP checksums in
+       software for both directions. */
+    (void) checksumFamily;
+    (void) isOutput;
+    if (checksumMask)
+        *checksumMask = 0;
+    return kIOReturnUnsupported;
 }
 
 UInt32 IntelMausi::getFeatures() const
